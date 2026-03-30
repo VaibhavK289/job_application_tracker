@@ -1,36 +1,33 @@
 import express from 'express';
 import Job from '../models/Job.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET all jobs
+// All routes below require authentication
+router.use(auth);
+
+// GET all jobs (scoped to user)
 router.get('/', async (req, res) => {
   try {
-    const jobs = await Job.find().sort({ createdAt: -1 });
+    const jobs = await Job.find({ user: req.userId }).sort({ createdAt: -1 });
     res.status(200).json(jobs);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// GET statistics
+// GET statistics (scoped to user)
 router.get('/stats', async (req, res) => {
   try {
-    const totalJobs = await Job.countDocuments();
-    
-    // Group by status
+    const totalJobs = await Job.countDocuments({ user: req.userId });
+
     const statusCounts = await Job.aggregate([
+      { $match: { user: req.userId } },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
 
-    const stats = {
-      total: totalJobs,
-      pending: 0,
-      interview: 0,
-      declined: 0,
-      offer: 0,
-    };
-
+    const stats = { total: totalJobs, pending: 0, interview: 0, declined: 0, offer: 0 };
     statusCounts.forEach(item => {
       if (item._id) stats[item._id.toLowerCase()] = item.count;
     });
@@ -41,10 +38,10 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// GET a single job
+// GET a single job (scoped to user)
 router.get('/:id', async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findOne({ _id: req.params.id, user: req.userId });
     if (!job) return res.status(404).json({ message: 'Job not found' });
     res.status(200).json(job);
   } catch (error) {
@@ -52,10 +49,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST a new job
+// POST a new job (attach user)
 router.post('/', async (req, res) => {
   try {
-    const newJob = new Job(req.body);
+    const newJob = new Job({ ...req.body, user: req.userId });
     const savedJob = await newJob.save();
     res.status(201).json(savedJob);
   } catch (error) {
@@ -63,11 +60,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT (update) a job
+// PUT (update) a job (scoped to user)
 router.put('/:id', async (req, res) => {
   try {
-    const updatedJob = await Job.findByIdAndUpdate(
-      req.params.id,
+    const updatedJob = await Job.findOneAndUpdate(
+      { _id: req.params.id, user: req.userId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -78,10 +75,10 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE a job
+// DELETE a job (scoped to user)
 router.delete('/:id', async (req, res) => {
   try {
-    const deletedJob = await Job.findByIdAndDelete(req.params.id);
+    const deletedJob = await Job.findOneAndDelete({ _id: req.params.id, user: req.userId });
     if (!deletedJob) return res.status(404).json({ message: 'Job not found' });
     res.status(200).json({ message: 'Job deleted successfully' });
   } catch (error) {

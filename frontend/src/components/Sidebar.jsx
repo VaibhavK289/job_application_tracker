@@ -1,7 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { FiBriefcase, FiBarChart2, FiSettings, FiLayers } from 'react-icons/fi';
+import { FiBriefcase, FiBarChart2, FiSettings, FiLayers, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ stats }) {
+  const { user, logout } = useAuth();
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -45,11 +48,18 @@ export default function Sidebar({ stats }) {
 
       <div style={{ flex: 1 }} />
 
+      {/* User Info + Logout */}
       <div className="sidebar-section">
-        <a href="#" className="nav-item" onClick={e => e.preventDefault()}>
-          <FiSettings size={16} />
-          Settings
-        </a>
+        {user && (
+          <div style={{ padding: '0 0.5rem', marginBottom: '0.75rem' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{user.name}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{user.email}</div>
+          </div>
+        )}
+        <button className="nav-item" onClick={logout} style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <FiLogOut size={16} />
+          Sign Out
+        </button>
       </div>
     </aside>
   );

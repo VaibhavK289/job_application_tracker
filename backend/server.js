@@ -3,6 +3,9 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import jobRoutes from './routes/jobRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import scrapeRoutes from './routes/scrapeRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 dotenv.config();
 
@@ -19,7 +22,10 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/jobtracker'
   .catch((err) => console.log('MongoDB connection error: ', err));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/scrape', scrapeRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Base route test
 app.get('/', (req, res) => {

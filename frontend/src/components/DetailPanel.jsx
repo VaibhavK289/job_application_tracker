@@ -1,8 +1,9 @@
-import { FiExternalLink, FiTrash2 } from 'react-icons/fi';
+import { FiExternalLink, FiTrash2, FiZap } from 'react-icons/fi';
 import { useState, useMemo } from 'react';
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/jobs';
+const AI_URL = 'http://localhost:5000/api/ai';
 
 export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
   const initialForm = useMemo(() => ({
@@ -15,10 +16,12 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
   }), [job?._id]);
 
   const [form, setForm] = useState(initialForm);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
   if (!job) return null;
 
-  const handleFieldChange = async (field, value) => {
+  const handleFieldChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -44,10 +47,25 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
     }
   };
 
+  const generateCoverLetter = async () => {
+    setAiLoading(true);
+    setCoverLetter('');
+    try {
+      const res = await axios.post(`${AI_URL}/cover-letter`, {
+        company: job.company,
+        position: job.position,
+        notes: job.notes,
+      });
+      setCoverLetter(res.data.coverLetter);
+    } catch (err) {
+      setCoverLetter(err.response?.data?.message || 'Failed to generate. Check your GEMINI_API_KEY in backend/.env');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
-      <div
-        className="detail-panel"
-      >
+      <div className="detail-panel">
         <div className="panel-header">
           <div>
             <div className="panel-company">{job.company}</div>
@@ -59,11 +77,7 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
         <div className="panel-body">
           <div className="panel-field">
             <div className="panel-field-label">Status</div>
-            <select
-              className="inline-edit"
-              value={form.status}
-              onChange={handleStatusChange}
-            >
+            <select className="inline-edit" value={form.status} onChange={handleStatusChange}>
               <option value="Pending">Pending</option>
               <option value="Interview">Interview</option>
               <option value="Offer">Offer</option>
@@ -74,13 +88,7 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
           <div className="panel-row">
             <div className="panel-field">
               <div className="panel-field-label">Location</div>
-              <input
-                className="inline-edit"
-                value={form.location}
-                onChange={e => handleFieldChange('location', e.target.value)}
-                onBlur={() => handleFieldBlur('location')}
-                placeholder="—"
-              />
+              <input className="inline-edit" value={form.location} onChange={e => handleFieldChange('location', e.target.value)} onBlur={() => handleFieldBlur('location')} placeholder="—" />
             </div>
             <div className="panel-field">
               <div className="panel-field-label">Date Applied</div>
@@ -93,23 +101,11 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
           <div className="panel-row">
             <div className="panel-field">
               <div className="panel-field-label">Salary</div>
-              <input
-                className="inline-edit"
-                value={form.salary}
-                onChange={e => handleFieldChange('salary', e.target.value)}
-                onBlur={() => handleFieldBlur('salary')}
-                placeholder="—"
-              />
+              <input className="inline-edit" value={form.salary} onChange={e => handleFieldChange('salary', e.target.value)} onBlur={() => handleFieldBlur('salary')} placeholder="—" />
             </div>
             <div className="panel-field">
               <div className="panel-field-label">Contact</div>
-              <input
-                className="inline-edit"
-                value={form.contact}
-                onChange={e => handleFieldChange('contact', e.target.value)}
-                onBlur={() => handleFieldBlur('contact')}
-                placeholder="—"
-              />
+              <input className="inline-edit" value={form.contact} onChange={e => handleFieldChange('contact', e.target.value)} onBlur={() => handleFieldBlur('contact')} placeholder="—" />
             </div>
           </div>
 
@@ -122,27 +118,22 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
                 </a>
               </div>
             ) : (
-              <input
-                className="inline-edit"
-                value={form.jobUrl}
-                onChange={e => handleFieldChange('jobUrl', e.target.value)}
-                onBlur={() => handleFieldBlur('jobUrl')}
-                placeholder="Paste URL..."
-              />
+              <input className="inline-edit" value={form.jobUrl} onChange={e => handleFieldChange('jobUrl', e.target.value)} onBlur={() => handleFieldBlur('jobUrl')} placeholder="Paste URL..." />
             )}
           </div>
 
           <div className="panel-field">
             <div className="panel-field-label">Notes</div>
-            <textarea
-              className="inline-edit"
-              rows={4}
-              value={form.notes}
-              onChange={e => handleFieldChange('notes', e.target.value)}
-              onBlur={() => handleFieldBlur('notes')}
-              placeholder="Add notes about this application..."
-              style={{ resize: 'vertical', minHeight: '80px' }}
-            />
+            <textarea className="inline-edit" rows={3} value={form.notes} onChange={e => handleFieldChange('notes', e.target.value)} onBlur={() => handleFieldBlur('notes')} placeholder="Add notes about this application..." style={{ resize: 'vertical', minHeight: '60px' }} />
+          </div>
+
+          {/* AI Cover Letter */}
+          <div className="ai-section">
+            <div className="ai-section-title"><FiZap size={12} /> AI Assistant</div>
+            <button className="btn btn-ghost btn-sm" onClick={generateCoverLetter} disabled={aiLoading} style={{ marginBottom: '0.75rem' }}>
+              {aiLoading ? 'Generating...' : 'Generate Cover Letter'}
+            </button>
+            {coverLetter && <div className="ai-output">{coverLetter}</div>}
           </div>
         </div>
 

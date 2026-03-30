@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FiPlus, FiBriefcase } from 'react-icons/fi';
+import { FiPlus, FiBriefcase, FiLink } from 'react-icons/fi';
 import PipelineBar from '../components/PipelineBar';
 import DetailPanel from '../components/DetailPanel';
 
 const API_URL = 'http://localhost:5000/api/jobs';
+const SCRAPE_URL = 'http://localhost:5000/api/scrape';
 const STATUSES = ['Pending', 'Interview', 'Offer', 'Declined'];
 
 export default function Dashboard({ stats, refreshStats }) {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState('manual'); // 'manual' | 'url'
   const initialForm = { company: '', position: '', status: 'Pending', location: '', notes: '', jobUrl: '', salary: '', contact: '' };
   const [formData, setFormData] = useState(initialForm);
+  const [scrapeUrl, setScrapeUrl] = useState('');
+  const [scraping, setScraping] = useState(false);
+  const [scrapeError, setScrapeError] = useState('');
 
   async function fetchJobs() {
     try {
@@ -35,6 +40,21 @@ export default function Dashboard({ stats, refreshStats }) {
     } catch (err) { console.error(err); }
   };
 
+  const handleScrape = async () => {
+    if (!scrapeUrl) return;
+    setScraping(true);
+    setScrapeError('');
+    try {
+      const res = await axios.post(SCRAPE_URL, { url: scrapeUrl });
+      setFormData(prev => ({ ...prev, ...res.data }));
+      setModalTab('manual'); // Switch to manual to review parsed data
+    } catch (err) {
+      setScrapeError(err.response?.data?.message || 'Could not parse this URL');
+    } finally {
+      setScraping(false);
+    }
+  };
+
   const deleteJob = async (id) => {
     try {
       await axios.delete(`${API_URL}/${id}`);
@@ -44,15 +64,15 @@ export default function Dashboard({ stats, refreshStats }) {
   };
 
   return (
-    <div
-      className="main-content"
-    >
+    <div className="main-content">
       {/* Header */}
       <div className="main-header">
         <div className="main-title">Pipeline</div>
-        <button className="btn btn-primary btn-sm" onClick={() => setIsModalOpen(true)}>
-          <FiPlus size={14} /> Add Application
-        </button>
+        <div className="header-actions">
+          <button className="btn btn-primary btn-sm" onClick={() => { setIsModalOpen(true); setModalTab('manual'); setFormData(initialForm); }}>
+            <FiPlus size={14} /> Add Application
+          </button>
+        </div>
       </div>
 
       {/* Pipeline Summary */}
@@ -110,7 +130,7 @@ export default function Dashboard({ stats, refreshStats }) {
           <DetailPanel
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
-            onUpdate={() => { refresh(); /* re-select updated job */ fetchJobs().then(() => { setSelectedJob(prev => jobs.find(j => j._id === prev?._id) || null); }); }}
+            onUpdate={refresh}
             onDelete={deleteJob}
           />
         )}
@@ -119,14 +139,37 @@ export default function Dashboard({ stats, refreshStats }) {
       {/* Add New Modal */}
       {isModalOpen && (
         <div className="modal-overlay" onPointerDown={() => setIsModalOpen(false)}>
-          <div
-            className="modal-content"
-            onPointerDown={e => e.stopPropagation()}
-          >
+          <div className="modal-content" onPointerDown={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2>New Application</h2>
               <button className="close-btn" onClick={() => setIsModalOpen(false)}>✕</button>
             </div>
+
+            {/* Tabs: Manual vs URL */}
+            <div className="tab-bar" style={{ margin: '-0.5rem -1.75rem 1.25rem', padding: '0 1.75rem' }}>
+              <button className={`tab-item ${modalTab === 'manual' ? 'active' : ''}`} onClick={() => setModalTab('manual')}>Manual Entry</button>
+              <button className={`tab-item ${modalTab === 'url' ? 'active' : ''}`} onClick={() => setModalTab('url')}>
+                <FiLink size={13} style={{ marginRight: '0.3rem' }} /> Paste URL
+              </button>
+            </div>
+
+            {modalTab === 'url' && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div className="form-group">
+                  <label>Job Posting URL</label>
+                  <div className="scrape-bar">
+                    <input type="url" className="input-field" value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)} placeholder="https://linkedin.com/jobs/view/..." />
+                    <button className="btn btn-primary btn-sm" onClick={handleScrape} disabled={scraping}>
+                      {scraping ? 'Parsing...' : 'Auto-Fill'}
+                    </button>
+                  </div>
+                </div>
+                {scrapeError && <div className="auth-error">{scrapeError}</div>}
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '0.5rem' }}>
+                  Paste a job URL and we'll try to extract the company, position, and location automatically.
+                </p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <div className="form-row">
