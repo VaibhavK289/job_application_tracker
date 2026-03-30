@@ -22,6 +22,18 @@ const jobSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  jobUrl: {
+    type: String,
+    default: '',
+  },
+  salary: {
+    type: String,
+    default: '',
+  },
+  contact: {
+    type: String,
+    default: '',
+  },
   notes: {
     type: String,
     default: '',
