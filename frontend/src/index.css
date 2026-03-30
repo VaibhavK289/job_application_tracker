@@ -1,0 +1,273 @@
+:root {
+  --background: #121212;
+  --surface: #1e1e1e;
+  --surface-hover: #2d2d2d;
+  --primary: #8b5cf6;
+  --primary-hover: #a78bfa;
+  --text: #f9fafb;
+  --text-muted: #9ca3af;
+  --border: #374151;
+  
+  /* Status Colors */
+  --status-pending: #f59e0b;
+  --status-interview: #3b82f6;
+  --status-offer: #10b981;
+  --status-declined: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Dashboard Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Forms & Inputs */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Jobs Grid */
+.jobs-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.job-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.job-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.job-company {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.job-position {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pending { background-color: rgba(245, 158, 11, 0.1); color: var(--status-pending); }
+.status-interview { background-color: rgba(59, 130, 246, 0.1); color: var(--status-interview); }
+.status-offer { background-color: rgba(16, 185, 129, 0.1); color: var(--status-offer); }
+.status-declined { background-color: rgba(239, 68, 68, 0.1); color: var(--status-declined); }
+
+.job-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+}
+.delete-btn:hover {
+  color: var(--status-declined);
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.close-btn:hover {
+  color: var(--text);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-ghost {
+  background: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover {
+  background-color: var(--surface);
+}
