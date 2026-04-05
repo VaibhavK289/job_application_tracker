@@ -1,5 +1,5 @@
-import { FiExternalLink, FiTrash2, FiZap } from 'react-icons/fi';
-import { useState, useMemo } from 'react';
+import { FiExternalLink, FiTrash2, FiZap, FiUploadCloud, FiCheckCircle } from 'react-icons/fi';
+import { useState, useMemo, useRef } from 'react';
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/jobs';
@@ -18,6 +18,9 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
   const [form, setForm] = useState(initialForm);
   const [coverLetter, setCoverLetter] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [resumeResult, setResumeResult] = useState(null);
+  const fileInputRef = useRef(null);
 
   if (!job) return null;
 
@@ -61,6 +64,32 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
       setCoverLetter(err.response?.data?.message || 'Failed to generate. Check your GEMINI_API_KEY in backend/.env');
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setResumeLoading(true);
+    setResumeResult(null);
+
+    const formData = new FormData();
+    formData.append('resumeFile', file);
+    formData.append('position', job.position);
+    formData.append('company', job.company);
+    formData.append('notes', job.notes || '');
+
+    try {
+      const res = await axios.post(`${AI_URL}/resume-score`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setResumeResult(res.data);
+    } catch (err) {
+      setResumeResult({ suggestion: err.response?.data?.message || 'Failed to check resume. Ensure HUGGINGFACE_API_KEY is set.' });
+    } finally {
+      setResumeLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -127,13 +156,72 @@ export default function DetailPanel({ job, onClose, onUpdate, onDelete }) {
             <textarea className="inline-edit" rows={3} value={form.notes} onChange={e => handleFieldChange('notes', e.target.value)} onBlur={() => handleFieldBlur('notes')} placeholder="Add notes about this application..." style={{ resize: 'vertical', minHeight: '60px' }} />
           </div>
 
-          {/* AI Cover Letter */}
+          {/* AI Cover Letter AI Assistant */}
           <div className="ai-section">
             <div className="ai-section-title"><FiZap size={12} /> AI Assistant</div>
-            <button className="btn btn-ghost btn-sm" onClick={generateCoverLetter} disabled={aiLoading} style={{ marginBottom: '0.75rem' }}>
-              {aiLoading ? 'Generating...' : 'Generate Cover Letter'}
-            </button>
-            {coverLetter && <div className="ai-output">{coverLetter}</div>}
+            
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-ghost btn-sm" onClick={generateCoverLetter} disabled={aiLoading}>
+                {aiLoading ? 'Generating...' : 'Generate Cover Letter'}
+              </button>
+
+              <button className="btn btn-ghost btn-sm" onClick={() => fileInputRef.current?.click()} disabled={resumeLoading}>
+                <FiUploadCloud size={13} style={{ marginRight: '4px' }} />
+                {resumeLoading ? 'Checking...' : 'Check Resume (PDF)'}
+              </button>
+              <input 
+                type="file" 
+                accept="application/pdf" 
+                style={{ display: 'none' }} 
+                ref={fileInputRef}
+                onChange={handleResumeUpload}
+              />
+            </div>
+
+            {coverLetter && <div className="ai-output" style={{ marginBottom: '0.75rem' }}>{coverLetter}</div>}
+            
+            {resumeResult && (
+              <div className="ai-output" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <FiCheckCircle size={14} style={{ color: 'var(--success)' }} /> Resume Match
+                  </strong>
+                  <span style={{ 
+                    background: resumeResult.score > 70 ? 'var(--success)' : resumeResult.score > 40 ? 'var(--warning)' : 'var(--danger)',
+                    color: '#fff',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600
+                  }}>
+                    {resumeResult.score || 0}%
+                  </span>
+                </div>
+                
+                {resumeResult.missing_keywords?.length > 0 && (
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'block', marginBottom: '4px' }}>Missing Keywords:</span>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {resumeResult.missing_keywords.map(kw => (
+                        <span key={kw} style={{ 
+                          background: 'rgba(255,255,255,0.05)', 
+                          border: '1px solid var(--border)', 
+                          padding: '1px 6px', 
+                          borderRadius: '4px', 
+                          fontSize: '0.7rem' 
+                        }}>{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {resumeResult.suggestion && (
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    {resumeResult.suggestion}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
