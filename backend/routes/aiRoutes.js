@@ -1,7 +1,10 @@
 import express from 'express';
 import multer from 'multer';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
 import { HfInference } from '@huggingface/inference';
+
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
